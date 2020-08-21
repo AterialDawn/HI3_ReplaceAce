@@ -38,7 +38,7 @@ namespace HI3_ReplaceAce
                 return;
             }
 
-            using (OpenFileDialog ofd = new OpenFileDialog { Filter = "Honkai Impact 3rd Launcher|falcon_glb.exe|AUDIO_Default.pck|AUDIO_Default.pck", Title = "Find your Honkai 3rd Install folder and select falcon_glb.exe" })
+            using (OpenFileDialog ofd = new OpenFileDialog { Filter = "Honkai Impact 3rd Launcher|falcon_glb.exe;falcon_os.exe|AUDIO_Default.pck|AUDIO_Default.pck", Title = "Find your Honkai 3rd Install folder and select falcon_glb.exe" })
             {
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
@@ -111,16 +111,26 @@ namespace HI3_ReplaceAce
                     Log("Safe Mode was enabled, Checking MD5");
                     byte[] valid_md5 = { 0xcd, 0xd5, 0x4a, 0x9d, 0x95, 0x64, 0xf4, 0xef, 0x0d, 0x89, 0x57, 0x74, 0xba, 0xea, 0x0b, 0x6a };
                     using (MD5 md5 = MD5.Create())
-                    using (FileStream fs = new FileStream(audioPck_location, FileMode.Open, FileAccess.Read))
+                    using (FileStream fs = new FileStream(audioPck_location, FileMode.Open, FileAccess.ReadWrite))
                     using (BufferedStream bs = new BufferedStream(fs, 16 * 1024))
                     {
-                        bool success = await Task.Run(() =>
+                        byte[] fileHash = await Task.Run(() =>
                         {
-                            return md5.ComputeHash(bs).SequenceEqual(valid_md5);
+                            return md5.ComputeHash(bs);
                         });
 
-                        if (!success)
+                        if (!fileHash.SequenceEqual(valid_md5))
                         {
+                            byte[] previousVersionBroken_md5 = { 0x33, 0x11, 0x58, 0x03, 0xb8, 0xf5, 0x90, 0x79, 0x61, 0x51, 0x28, 0x40, 0xc5, 0xfb, 0x7a, 0x0b };
+                            if (fileHash.SequenceEqual(previousVersionBroken_md5))
+                            {
+                                Log("This is a version 1 broken file. Attempting to correct file offsets");
+                                fs.Position = 0;
+                                await FixAllFileOffsets(fs);
+                                Log("Offsets fixed! File should be good to go");
+                                WorkDone();
+                                return;
+                            }
                             Log("The selected AUDIO_Default.pck file has not been confirmed to work with this program! Stopping for safety!");
                             WorkDone(false);
                             return;
@@ -180,13 +190,16 @@ namespace HI3_ReplaceAce
                         leftToRead = (int)(sourceFileStream.Length - sourceFileStream.Position);
 
                         await BufferedStreamCopy(sourceFileStream, destinationFileStream, leftToRead);
+
+                        await FixAllFileOffsets(destinationFileStream);
+
                         Log("Done!");
                     }
 
                     if (safeModeCheckBox.Checked)
                     {
                         Log("Safe Mode was enabled, Checking MD5 of result file ");
-                        byte[] valid_md5 = { 0x33, 0x11, 0x58, 0x03, 0xb8, 0xf5, 0x90, 0x79, 0x61, 0x51, 0x28, 0x40, 0xc5, 0xfb, 0x7a, 0x0b };
+                        byte[] valid_md5 = { 0x73, 0x31, 0xf4, 0xce, 0x90, 0x62, 0x09, 0x69, 0x92, 0x1f, 0xaf, 0x7f, 0x7c, 0x71, 0x57, 0x13 };
                         bool success = false;
                         using (MD5 md5 = MD5.Create())
                         using (FileStream fs = new FileStream(audioPck_location, FileMode.Open, FileAccess.Read))
@@ -200,9 +213,13 @@ namespace HI3_ReplaceAce
 
                         if (!success)
                         {
-                            Log("The resulting AUDIO_Default.pck file DID NOT match our expected output! Restoring backup file.");
-                            File.Delete(audioPck_location);
-                            File.Copy(audioPck_location + ".backup", audioPck_location);
+                            Log("The resulting AUDIO_Default.pck file DID NOT match our expected output!");
+                            if (MessageBox.Show("The resulting file did not match our expected output. This means something might have gone wrong.\nWould you like to restore the backup?", "Mismatch", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                            {
+                                Log("Restoring from Backup");
+                                File.Delete(audioPck_location);
+                                File.Copy(audioPck_location + ".backup", audioPck_location);
+                            }
                             WorkDone();
                             return;
                         }
@@ -217,6 +234,31 @@ namespace HI3_ReplaceAce
                 Log($"ERROR! Unexpected exception occured. {e}");
                 return;
             }
+        }
+
+        Task FixAllFileOffsets(Stream str)
+        {
+            const uint OffsetDisparity = 930601;
+
+            return Task.Run(() =>
+            {
+                Log("Fixing the offsets for remaining clips...");
+                str.Position = 17888;
+                using (BinaryWriter writer = new BinaryWriter(str, Encoding.ASCII, true))
+                using (BinaryReader reader = new BinaryReader(str, Encoding.ASCII, true))
+                {
+                    for (int i = 462; i > 0; i--)
+                    {
+                        uint currentPosition = reader.ReadUInt32();
+                        currentPosition += OffsetDisparity;
+                        str.Position -= 4;
+                        writer.Write(currentPosition);
+
+                        str.Position += 16;
+                    }
+                }
+                Log("Offsets fixed!");
+            });
         }
 
         async Task BufferedStreamCopy(Stream source, Stream target, int toCopy)
@@ -236,7 +278,14 @@ namespace HI3_ReplaceAce
 
         private void Log(string message)
         {
-            logTextBox.AppendText(message + Environment.NewLine);
+            if (this.InvokeRequired)
+            {
+                this.Invoke((MethodInvoker)(() => Log(message)));
+            }
+            else
+            {
+                logTextBox.AppendText(message + Environment.NewLine);
+            }
         }
     }
 }
