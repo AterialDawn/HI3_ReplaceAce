@@ -109,7 +109,7 @@ namespace HI3_ReplaceAce
                 if (safeModeCheckBox.Checked)
                 {
                     Log("Safe Mode was enabled, Checking MD5");
-                    byte[] valid_md5 = { 0xcd, 0xd5, 0x4a, 0x9d, 0x95, 0x64, 0xf4, 0xef, 0x0d, 0x89, 0x57, 0x74, 0xba, 0xea, 0x0b, 0x6a };
+                    byte[] valid_md5 = { 0x89, 0xcf, 0xf0, 0x12, 0x3a, 0x33, 0xdf, 0x73, 0x56, 0x4a, 0x94, 0xf4, 0x3e, 0xcf, 0xd7, 0x8b };
                     using (MD5 md5 = MD5.Create())
                     using (FileStream fs = new FileStream(audioPck_location, FileMode.Open, FileAccess.ReadWrite))
                     using (BufferedStream bs = new BufferedStream(fs, 16 * 1024))
@@ -121,16 +121,6 @@ namespace HI3_ReplaceAce
 
                         if (!fileHash.SequenceEqual(valid_md5))
                         {
-                            byte[] previousVersionBroken_md5 = { 0x33, 0x11, 0x58, 0x03, 0xb8, 0xf5, 0x90, 0x79, 0x61, 0x51, 0x28, 0x40, 0xc5, 0xfb, 0x7a, 0x0b };
-                            if (fileHash.SequenceEqual(previousVersionBroken_md5))
-                            {
-                                Log("This is a version 1 broken file. Attempting to correct file offsets");
-                                fs.Position = 0;
-                                await FixAllFileOffsets(fs);
-                                Log("Offsets fixed! File should be good to go");
-                                WorkDone();
-                                return;
-                            }
                             Log("The selected AUDIO_Default.pck file has not been confirmed to work with this program! Stopping for safety!");
                             WorkDone(false);
                             return;
@@ -146,8 +136,13 @@ namespace HI3_ReplaceAce
                 byte[] gionWem_Data = new byte[1730662];
 
 
-                const long aceWemLength_offset = 17864;
-                const long gionWemContents_offset = 1019717015;
+                //const long aceWemLength_offset = 17864;
+                //const long gionWemContents_offset = 1019717015;
+
+                const long aceWemLength_offset = 18884;
+                const long gionWemContents_offset = 538741825;
+                const long aceWemContents_offset = 524378382;
+
                 //Open audio_default
                 using (FileStream sourceFileStream = new FileStream(audioPck_location + ".backup", FileMode.Open, FileAccess.Read))
                 {
@@ -178,7 +173,7 @@ namespace HI3_ReplaceAce
                         sourceFileStream.Seek(4, SeekOrigin.Current); //skip past 4 bytes
 
                         Log("Copying up to beginning of ACE wem");
-                        leftToRead = 726333793 - (int)sourceFileStream.Position;
+                        leftToRead = (int)aceWemContents_offset - (int)sourceFileStream.Position;
 
                         await BufferedStreamCopy(sourceFileStream, destinationFileStream, leftToRead);
                         Log("Replacing ACE with GION");
@@ -199,7 +194,7 @@ namespace HI3_ReplaceAce
                     if (safeModeCheckBox.Checked)
                     {
                         Log("Safe Mode was enabled, Checking MD5 of result file ");
-                        byte[] valid_md5 = { 0x73, 0x31, 0xf4, 0xce, 0x90, 0x62, 0x09, 0x69, 0x92, 0x1f, 0xaf, 0x7f, 0x7c, 0x71, 0x57, 0x13 };
+                        byte[] valid_md5 = { 0xd1, 0x55, 0xd2, 0xa2, 0x9e, 0x8a, 0x50, 0xeb, 0x98, 0x80, 0xb6, 0x09, 0x53, 0x5c, 0x68, 0x45 };
                         bool success = false;
                         using (MD5 md5 = MD5.Create())
                         using (FileStream fs = new FileStream(audioPck_location, FileMode.Open, FileAccess.Read))
@@ -238,26 +233,50 @@ namespace HI3_ReplaceAce
 
         Task FixAllFileOffsets(Stream str)
         {
+            const uint wemFilesListings_offset = 17612;
             const uint OffsetDisparity = 930601;
+            const uint nameOfAceWem = 190629806;
 
             return Task.Run(() =>
             {
                 Log("Fixing the offsets for remaining clips...");
-                str.Position = 17888;
                 using (BinaryWriter writer = new BinaryWriter(str, Encoding.ASCII, true))
                 using (BinaryReader reader = new BinaryReader(str, Encoding.ASCII, true))
                 {
-                    for (int i = 462; i > 0; i--)
+                    str.Position = wemFilesListings_offset;
+                    uint numberOfTotalFilesInPck = reader.ReadUInt32();
+                    bool startCorrectingOffsets = false;
+                    int correctedFiles = 0;
+                    for (int i = 0; i < numberOfTotalFilesInPck; i++)
                     {
-                        uint currentPosition = reader.ReadUInt32();
-                        currentPosition += OffsetDisparity;
-                        str.Position -= 4;
-                        writer.Write(currentPosition);
+                        if (!startCorrectingOffsets)
+                        {
+                            //find ace wem
+                            uint nameOfCurrentFile = reader.ReadUInt32();
+                            Log($"Found file {nameOfCurrentFile}");
+                            if (nameOfCurrentFile == nameOfAceWem)
+                            {
+                                Log($"Found index of ACE wem! It is located at {str.Position - 4}");
+                                startCorrectingOffsets = true;
+                            }
+                            str.Position += 16;//skip the other 3 remaining uint entries
+                        }
+                        else
+                        {
+                            uint currentFileName = reader.ReadUInt32();
+                            uint multiplier = reader.ReadUInt32();
+                            uint length = reader.ReadUInt32();
+                            uint currentPosition = reader.ReadUInt32();
+                            currentPosition += OffsetDisparity;
+                            str.Position -= 4;
+                            writer.Write(currentPosition);
 
-                        str.Position += 16;
+                            uint directoryId = reader.ReadUInt32();
+                            correctedFiles++;
+                        }
                     }
+                    Log($"Offsets fixed! Corrected a total of {correctedFiles} files");
                 }
-                Log("Offsets fixed!");
             });
         }
 

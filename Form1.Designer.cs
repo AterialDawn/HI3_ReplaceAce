@@ -77,6 +77,7 @@
             this.safeModeCheckBox.AutoSize = true;
             this.safeModeCheckBox.Checked = true;
             this.safeModeCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.safeModeCheckBox.Enabled = false;
             this.safeModeCheckBox.Location = new System.Drawing.Point(215, 94);
             this.safeModeCheckBox.Name = "safeModeCheckBox";
             this.safeModeCheckBox.Size = new System.Drawing.Size(78, 17);
@@ -100,8 +101,8 @@
             this.introHeader.Name = "introHeader";
             this.introHeader.Size = new System.Drawing.Size(284, 69);
             this.introHeader.TabIndex = 0;
-            this.introHeader.Text = "Welcome to HI3 Replace Ace\r\n\r\nThis app will attempt to replace the ACE BGM theme " +
-    "with the GION OST.\r\nTo begin, press the Begin button";
+            this.introHeader.Text = "Welcome to HI3 Replace Ace\r\nCompatible with HI3 v4.2\r\nThis app will attempt to re" +
+    "place the ACE BGM theme with the GION OST.\r\nTo begin, press the Begin button";
             this.introHeader.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // workTab
@@ -163,7 +164,7 @@
             this.Controls.Add(this.tabControl);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Name = "Form1";
-            this.Text = "HI3 Replace Ace v1.0";
+            this.Text = "HI3 Replace Ace v1.2";
             this.tabControl.ResumeLayout(false);
             this.introTab.ResumeLayout(false);
             this.introTab.PerformLayout();
