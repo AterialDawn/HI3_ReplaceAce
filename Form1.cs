@@ -109,7 +109,7 @@ namespace HI3_ReplaceAce
                 if (safeModeCheckBox.Checked)
                 {
                     Log("Safe Mode was enabled, Checking MD5");
-                    byte[] valid_md5 = { 0x89, 0xcf, 0xf0, 0x12, 0x3a, 0x33, 0xdf, 0x73, 0x56, 0x4a, 0x94, 0xf4, 0x3e, 0xcf, 0xd7, 0x8b };
+                    byte[] valid_md5 = { 0xd5, 0x81, 0xfb, 0xbb, 0x67, 0xe1, 0xa9, 0x75, 0xe0, 0x3c, 0xfc, 0xca, 0x05, 0x40, 0x94, 0x5d };
                     using (MD5 md5 = MD5.Create())
                     using (FileStream fs = new FileStream(audioPck_location, FileMode.Open, FileAccess.ReadWrite))
                     using (BufferedStream bs = new BufferedStream(fs, 16 * 1024))
@@ -139,9 +139,9 @@ namespace HI3_ReplaceAce
                 //const long aceWemLength_offset = 17864;
                 //const long gionWemContents_offset = 1019717015;
 
-                const long aceWemLength_offset = 18884;
-                const long gionWemContents_offset = 538741825;
-                const long aceWemContents_offset = 524378382;
+                const long aceWemLength_offset = 19004;
+                const long gionWemContents_offset = 555689646;
+                const long aceWemContents_offset = 539628477;
 
                 //Open audio_default
                 using (FileStream sourceFileStream = new FileStream(audioPck_location + ".backup", FileMode.Open, FileAccess.Read))
@@ -194,7 +194,7 @@ namespace HI3_ReplaceAce
                     if (safeModeCheckBox.Checked)
                     {
                         Log("Safe Mode was enabled, Checking MD5 of result file ");
-                        byte[] valid_md5 = { 0xd1, 0x55, 0xd2, 0xa2, 0x9e, 0x8a, 0x50, 0xeb, 0x98, 0x80, 0xb6, 0x09, 0x53, 0x5c, 0x68, 0x45 };
+                        byte[] valid_md5 = { 0x90, 0xb2, 0x87, 0xf8, 0x42, 0x33, 0x6d, 0x89, 0xc6, 0xb0, 0xf6, 0xb2, 0x56, 0x9a, 0x20, 0x0f };
                         bool success = false;
                         using (MD5 md5 = MD5.Create())
                         using (FileStream fs = new FileStream(audioPck_location, FileMode.Open, FileAccess.Read))
@@ -233,7 +233,7 @@ namespace HI3_ReplaceAce
 
         Task FixAllFileOffsets(Stream str)
         {
-            const uint wemFilesListings_offset = 17612;
+            const uint wemFilesListings_offset = 17692;
             const uint OffsetDisparity = 930601;
             const uint nameOfAceWem = 190629806;
 
