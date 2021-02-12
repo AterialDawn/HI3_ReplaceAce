@@ -164,7 +164,7 @@
             this.Controls.Add(this.tabControl);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Name = "Form1";
-            this.Text = "HI3 Replace Ace v1.4";
+            this.Text = "HI3 Replace Ace v1.5";
             this.tabControl.ResumeLayout(false);
             this.introTab.ResumeLayout(false);
             this.introTab.PerformLayout();
