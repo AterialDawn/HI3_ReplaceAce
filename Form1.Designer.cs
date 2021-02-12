@@ -101,7 +101,7 @@
             this.introHeader.Name = "introHeader";
             this.introHeader.Size = new System.Drawing.Size(284, 69);
             this.introHeader.TabIndex = 0;
-            this.introHeader.Text = "Welcome to HI3 Replace Ace\r\nCompatible with HI3 v4.4\r\nThis app will attempt to re" +
+            this.introHeader.Text = "Welcome to HI3 Replace Ace\r\nCompatible with HI3 v4.5\r\nThis app will attempt to re" +
     "place the ACE BGM theme with the GION OST.\r\nTo begin, press the Begin button";
             this.introHeader.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
@@ -164,7 +164,7 @@
             this.Controls.Add(this.tabControl);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Name = "Form1";
-            this.Text = "HI3 Replace Ace v1.3";
+            this.Text = "HI3 Replace Ace v1.4";
             this.tabControl.ResumeLayout(false);
             this.introTab.ResumeLayout(false);
             this.introTab.PerformLayout();
